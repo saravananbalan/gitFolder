@@ -1,0 +1,5 @@
+select datagramSourceIP,unixSecondsUTC,agent,udpInDatagrams,udpNoPorts,udpOutDatagrams,tcpActiveOpens,tcpPassiveOpens,ipInReceives,disk_total,disk_free,mem_total,mem_free,cpu_load_one,cpu_load_five,cpu_uptime,hostname,UUID,os_name,datagram varchar(255) from sample
+
+IPV4_SRC_ADDR,IPV4_DST_ADDR,IN_PKTS,IN_BYTES,L4_SRC_PORT,L4_DST_PORT,PROTOCOL,SRC_TOS,HTTP_URL,start_time
+
+datagramSourceIP,unixSecondsUTC,agent,udpNoPorts,tcpPassiveOpens,disk_total,disk_free,mem_total,mem_free,cpu_load_one,cpu_speed,datagram  

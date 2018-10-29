@@ -1,0 +1,103 @@
+public Object getIpgroup(ChartModel model) {
+		List<Object> grouplist = new ArrayList<>();
+		List<Object> list = new ArrayList<>();
+		String groupquery;
+		List<Map<String,Object>> grouplistmap = new ArrayList<>();
+		Map <String,Object> ipgroupmap = new HashMap<>();
+		Set<Object> sa = new HashSet<>();
+		Map <String,Object> map = new HashMap<>();
+		switch(model.getTraffic()){
+		case "Speed":
+			grouplist.add("In_Traffic,Out_Traffic from (select agent as SourceIP,datagramSourceIP as DestinationIp , sum(udpInDatagrams/60) as In_Traffic,sum(udpOutDatagrams/60) as Out_Traffic from sample ");
+			break;
+		case "Volume":
+			grouplist.add("In_Traffic,Out_Traffic from (select agent as SourceIP,datagramSourceIP as DestinationIp , sum(udpInDatagrams) as In_Traffic,sum(udpOutDatagrams) as Out_Traffic from sample");
+			break;
+		case "Utilization":
+			switch(model.getUtilization()){
+			case "CPU":
+				grouplist.add("  cpu_utilization from (select sum(cpu_load_one)/100 as cpu_utilization,agent as SourceIP,datagramSourceIP as DestinationIp from sample");
+				break;
+			case "Disk":
+				grouplist.add(" In_Disk,Out_Disk,sum((In_Disk-Out_Disk))*100/In_Disk as Total_Disk from (select count(agent) as cnt,agent as SourceIP,datagramSourceIP as DestinationIp ,sum(disk_total) as In_Disk,sum(disk_free) as Out_Disk from sample ");
+				break;
+			case "Memory":
+				grouplist.add(" In_Mem,Out_Mem,sum((In_mem-Out_mem))*100/In_mem as Total_mem from (select count(agent) as cnt,agent as SourceIP,datagramSourceIP as DestinationIp ,sum(mem_total) as In_mem,sum(mem_free) as Out_mem from sample  ");
+				break;
+			}
+			break;
+		}
+		switch(model.getPeriod()){
+		case "Last 15 minutes":
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC >= DATE_SUB(NOW(),INTERVAL 15 minute) group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp ";
+		    grouplistmap=jdbc.queryForList(groupquery);
+		    break;
+		case "Last 30 minutes":
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC >= DATE_SUB(NOW(),INTERVAL 30 minute) group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp ";
+			grouplistmap=jdbc.queryForList(groupquery);
+			break;
+		case "Last Hour":
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC >= DATE_SUB(NOW(),INTERVAL 1 hour) group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp ";
+			grouplistmap=jdbc.queryForList(groupquery);
+			break;
+		case "Last 6 Hour":
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC >= DATE_SUB(NOW(),INTERVAL 6 hour) group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp ";
+			grouplistmap=jdbc.queryForList(groupquery);
+			break;
+		case "Last 24 Hour":
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC >= DATE_SUB(NOW(),INTERVAL 24 hour) group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp ";
+			grouplistmap=jdbc.queryForList(groupquery);
+			break;
+		case "Last week":
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC >= DATE_SUB(NOW(),INTERVAL 7 day) group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp ";
+			grouplistmap=jdbc.queryForList(groupquery); //and unixSecondsUTC between '"+model.getFromTime()+"' and '"+model.getToTime()+"'");
+			break;
+		/*case "last24hour":
+			grouplistmap.add("unixSecondsUTC >= DATE_SUB(NOW(),INTERVAL 24 hour)");
+			break;*/
+		case "Today":
+			LocalDate ld =LocalDate.now();
+			String today = ld.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+			String fromtime = today.concat(" 00:00:00");
+			String totime = today.concat(" 23:59:59");
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC between '"+fromtime+"' and '"+totime+"' group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp";
+			grouplistmap=jdbc.queryForList(groupquery);// and unixSecondsUTC between '"+model.getFromTime()+"' and '"+model.getToTime()+"'");
+			break;
+		case "Yesterday":	
+			LocalDate ldt =LocalDate.now().minusDays(1);
+			String yesterday = ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+			String fromtime1 = yesterday.concat(" 00:00:00");
+			String totime1 = yesterday.concat(" 23:59:59");
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC between '"+fromtime1+"' and '"+totime1+"'  group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp ";
+			grouplistmap=jdbc.queryForList(groupquery);// and unixSecondsUTC between '"+model.getFromTime()+"' and '"+model.getToTime()+"'");
+			break;			
+		case "Last Month":
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC >= DATE_SUB(NOW(),INTERVAL 1 month) group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp";
+			grouplistmap=jdbc.queryForList(groupquery);  //and unixSecondsUTC between '"+model.getFromTime()+"' and '"+model.getToTime()+"'");
+			break;			
+		case "Last quater month":
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where  unixSecondsUTC >= DATE_SUB(NOW(),INTERVAL 4 month) group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp";
+			grouplistmap=jdbc.queryForList(groupquery);//  and unixSecondsUTC between '"+model.getFromTime()+"' and '"+model.getToTime()+"'");
+			break;			
+		case "Custom Selection":
+			groupquery="select SourceIP,DestinationIP,"+grouplist.get(0)+" where unixSecondsUTC between '"+ model.getFromTime()+"' and '"+model.getToTime()+"' group by SourceIp,DestinationIp)x group by SourceIp,DestinationIp  ";
+			grouplistmap=jdbc.queryForList(groupquery);
+			break;	
+	}
+		for(Map.Entry<String, Object> sflow : grouplistmap.get(0).entrySet()){
+	    	sa.add(sflow.getKey());
+	    	for(Object sd :sa){	
+	    	ipgroupmap.put("title", sd);
+	    	ipgroupmap.put("valign","middle" );
+	    	ipgroupmap.put("align","centre" );
+	    	ipgroupmap.put("field", sd);  	
+	}       
+	    	list.add(ipgroupmap);
+	    	map.put("column", list);
+	    	sa=new HashSet<>();
+	    	ipgroupmap=new HashMap<>();
+            map.put("rows",grouplistmap);
+		}
+		return map;	
+	}
+
